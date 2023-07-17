@@ -1,86 +1,130 @@
+/**
+ * Visor
+ * Modificaciones by Luis
+ * 
+ * Codigo Base: 
+ * https://letsbuildui.dev/articles/how-to-build-an-image-comparison-slider
+ */
 
-import { useEffect, useRef } from 'react';
-import './Visor.css'; 
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { ReactComponent as CompareIcon } from "./slider.svg";
+import "./Visor.css";
 
-export const Visor = ({before, after, width, height}) => {
 
-  const refContainer = useRef(null);
-  const refAfter  = useRef(null);
-  const refBefore = useRef(null);
-  const refSlider = useRef(null);
-  const refOverlay = useRef(null);
+const Visor = ({ before, after, width, borderColor, textBefore, textAfter, text }) => {
+  let style = {};
+  style = (width)? {...style, width} : style; 
+  style = (borderColor)? {...style, borderColor} : style; 
+     
+  const [isResizing, setIsResizing] = useState(false);
+  const beforeImageRef = useRef();
+  const handleRef = useRef();
+
+  const setPositioning = useCallback((x) => {
+    const { left, width } = beforeImageRef.current.getBoundingClientRect();
+    const handleWidth = handleRef.current.offsetWidth;
+
+    if (x >= left && x <= width + left - handleWidth) {
+      handleRef.current.style.left = `${((x - left) / width) * 100}%`;
+      beforeImageRef.current.style.clipPath = `inset(0 ${
+        100 - ((x - left) / width) * 100
+      }% 0 0)`;
+    }
+  }, []);
+
+  const handleResize = useCallback(
+    (e) => {
+      if (e.clientX) {
+        setPositioning(e.clientX);
+      } else if (e.touches[0] && e.touches[0].clientX) {
+        setPositioning(e.touches[0].clientX);
+      }
+    },
+    [setPositioning]
+  );
+
+  // Set initial positioning on component mount
+  useEffect(() => {
+    const { left, width } = beforeImageRef.current.getBoundingClientRect();
+    const handleWidth = handleRef.current.offsetWidth;
+
+    setPositioning(width / 2 + left - handleWidth / 2);
+  }, [setPositioning]);
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("touchmove", handleResize);
+    window.removeEventListener("mouseup", handleResizeEnd);
+    window.removeEventListener("touchend", handleResizeEnd);
+  }, [handleResize]);
+
+  const onKeyDown = useCallback(
+    (e) => {
+      const { offsetLeft, offsetParent } = handleRef.current;
+
+      if (e.code === "ArrowLeft") {
+        setPositioning(offsetLeft + offsetParent.offsetLeft - 10);
+      }
+
+      if (e.code === "ArrowRight") {
+        setPositioning(offsetLeft + offsetParent.offsetLeft + 10);
+      }
+    },
+    [setPositioning]
+  );
+
+  // Add keydown event on mount
+  useEffect(() => {
+    window.addEventListener("keydown", onKeyDown);
+  }, [onKeyDown]);
 
   useEffect(() => {
-    console.log(refBefore.current.offsetWidth);
-    console.log(refAfter.offsetWidth);
-    refContainer.current.style.height = height + "px";
+    if (isResizing) {
+      window.addEventListener("mousemove", handleResize);
+      window.addEventListener("touchmove", handleResize);
+      window.addEventListener("mouseup", handleResizeEnd);
+      window.addEventListener("touchend", handleResizeEnd);
+    }
 
-    refOverlay.current.style.width = (width / 2) + "px";
-    refSlider.current.style.top = (height / 2) - (refSlider.current.offsetHeight / 2) + "px";
-    refSlider.current.style.left = (width / 2) - (refSlider.current.offsetWidth / 2) + "px";
-  
-    refSlider.current.addEventListener("mousedown", slideReady);
-    window.addEventListener("mouseup", slideFinish);
+    return () => {
+      window.removeEventListener("mousemove", handleResize);
+      window.addEventListener("touchmove", handleResize);
+      window.removeEventListener("mouseup", handleResizeEnd);
+      window.removeEventListener("touchend", handleResizeEnd);
+      window.removeEventListener("keyup", onKeyDown);
+    };
+  }, [isResizing, handleResize, handleResizeEnd, onKeyDown]);
 
-    refSlider.current.addEventListener("touchstart", slideReady);
-    window.addEventListener("touchend", slideFinish);
-  }, [width, height])
-
-  let clicked = 0;
-
-  function slideReady(e) {
-    /* Prevent any other actions that may occur when moving over the image: */
-    e.preventDefault();
-    /* The slider is now clicked and ready to move: */
-    clicked = 1;
-    /* Execute a function when the slider is moved: */
-    window.addEventListener("mousemove", slideMove);
-    window.addEventListener("touchmove", slideMove);
-  }
-
-  function slideFinish() {
-    /* The slider is no longer clicked: */
-    clicked = 0;
-  }
-  function slideMove(e) {
-    var pos;
-    /* If the slider is no longer clicked, exit this function: */
-    if (clicked === 0) return false;
-    /* Get the cursor's x position: */
-    pos = getCursorPos(e)
-    /* Prevent the slider from being positioned outside the image: */
-    if (pos < 0) pos = 0;
-    if (pos > width) pos = width;
-    /* Execute a function that will resize the overlay image according to the cursor: */
-    slide(pos);
-  }
-  function getCursorPos(e) {
-    var a, x = 0;
-    e = (e.changedTouches) ? e.changedTouches[0] : e;
-    /* Get the x positions of the image: */
-    a = refOverlay.current.getBoundingClientRect();
-    /* Calculate the cursor's x coordinate, relative to the image: */
-    x = e.pageX - a.left;
-    /* Consider any page scrolling: */
-    x = x - window.pageXOffset;
-    return x;
-  }
-  function slide(x) {
-    /* Resize the image: */
-    refOverlay.current.style.width = x + "px";
-    /* Position the slider: */
-    refSlider.current.style.left = refOverlay.current.offsetWidth - (refSlider.current.offsetWidth / 2) + "px";
-  }
-
-  return(
-      <div className="img-comp-container" ref={refContainer}>
-        <div className="img-comp-img">
-          <img alt="imagen despues" ref={refAfter} src={after} width={width} height={height}/>
+  return (
+    <>
+      <div className="comparison-slider" style={style}>
+        {text && 
+        <>
+          <span className="text before">{textBefore}</span>
+          <span className="text after">{textAfter}</span>
+        </>
+        }
+        
+        <div
+          ref={handleRef}
+          className="handle"
+          onMouseDown={() => setIsResizing(true)}
+          onTouchStart={() => setIsResizing(true)}
+        >
+          <CompareIcon />
         </div>
-        <div className="img-comp-slider" ref={refSlider}> </div>
-        <div className="img-comp-img img-comp-overlay" ref={refOverlay}>
-          <img alt="imagen antes" ref={refBefore} src={before} width={width} height={height}/>
+        <div ref={beforeImageRef} className="comparison-item before">
+          <img draggable="false" src={before} alt="Before"  />
+        </div>
+        <div className="comparison-item">
+          <img draggable="false" src={after} alt="After" />
         </div>
       </div>
-  )
-}
+      
+    </>
+  );
+};
+
+export default Visor;

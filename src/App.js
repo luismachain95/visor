@@ -1,5 +1,5 @@
 
-import { Visor } from './Visor/Visor';
+import Visor from './Visor/Visor';
 import './App.css';
 
 function App() {
@@ -8,15 +8,26 @@ function App() {
     <>
       <Visor 
         before="imagenes/image_before.jpg" 
-        after="imagenes/image_after.jpg" 
-        width={500}
-        height={600}
+        after="imagenes/image_after.jpg"
+        width={1000}
+        text={true}
+        textBefore="Antes"
+        textAfter="Despues"
       />
+      
       <Visor 
         before="imagenes/image_before.jpg" 
-        after="imagenes/image_after.jpg" 
+        after="imagenes/image_after.jpg"
         width={500}
-        height={600}
+        text={true}
+        textBefore="Naranja"
+        textAfter="Rojo"
+      />
+      
+      <Visor 
+        before="imagenes/image_before.jpg" 
+        after="imagenes/image_after.jpg"
+        width={500}
       />
     </>
   );
