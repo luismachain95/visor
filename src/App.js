@@ -1,24 +1,24 @@
-import logo from './logo.svg';
+
+import { Visor } from './Visor/Visor';
 import './App.css';
 
 function App() {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Visor 
+        before="imagenes/image_before.jpg" 
+        after="imagenes/image_after.jpg" 
+        width={500}
+        height={600}
+      />
+      <Visor 
+        before="imagenes/image_before.jpg" 
+        after="imagenes/image_after.jpg" 
+        width={500}
+        height={600}
+      />
+    </>
   );
 }
 
